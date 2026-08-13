@@ -8,7 +8,7 @@ import '../providers.dart';
 import '../auth/auth.dart';
 
 class AddIncomeScreen extends ConsumerStatefulWidget {
-  const AddIncomeScreen({Key? key}) : super(key: key);
+  const AddIncomeScreen({super.key});
 
   @override
   ConsumerState<AddIncomeScreen> createState() => _AddIncomeScreenState();

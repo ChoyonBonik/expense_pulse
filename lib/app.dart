@@ -1,10 +1,12 @@
 // lib/app.dart
 import 'package:expense_pulse/screens/add_expense_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 // Removed hide import; GoRouterRefreshStream is now accessible via the standard import
 import 'package:go_router/go_router.dart';
 import 'router/go_router_refresh_stream.dart';
+import 'screens/splash_screen.dart';
 import 'providers.dart';
 import 'auth/auth.dart';
 import 'screens/home_screen.dart';
@@ -21,6 +23,7 @@ class ExpensePulseApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = GoRouter(
+    initialLocation: '/splash',
       refreshListenable: GoRouterRefreshStream(ref.watch(authProvider.notifier).stream),
       redirect: (context, state) {
         final auth = ref.read(authProvider);
@@ -35,6 +38,7 @@ class ExpensePulseApp extends ConsumerWidget {
         return null;
       },
       routes: [
+        GoRoute(path: '/splash', builder: (context, state) => const SplashScreen()),
         GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
         GoRoute(path: '/register', builder: (context, state) => const RegisterScreen()),
         GoRoute(path: '/', builder: (context, state) => const HomeScreen()),
