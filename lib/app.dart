@@ -1,5 +1,5 @@
 // lib/app.dart
-import 'package:expense_pulse/screens/add_expense_screen.dart';
+import 'package:expense_pulse/screens/add_entry_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,7 +10,7 @@ import 'screens/splash_screen.dart';
 import 'providers.dart';
 import 'auth/auth.dart';
 import 'screens/home_screen.dart';
-import 'screens/add_income_screen.dart';
+
 import 'screens/register_screen.dart';
 import 'screens/edit_expense_screen.dart';
 import 'screens/settings_screen.dart';
@@ -40,10 +40,13 @@ class ExpensePulseApp extends ConsumerWidget {
       routes: [
         GoRoute(path: '/splash', builder: (context, state) => const SplashScreen()),
         GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
+        // Updated routes: unified add entry screen
+        GoRoute(path: '/add', builder: (context, state) => const AddEntryScreen()),
+        // Removed separate add-income route
+
         GoRoute(path: '/register', builder: (context, state) => const RegisterScreen()),
         GoRoute(path: '/', builder: (context, state) => const HomeScreen()),
-        GoRoute(path: '/add', builder: (context, state) => const AddExpenseScreen()),
-        GoRoute(path: '/add-income', builder: (context, state) => const AddIncomeScreen()),
+
         GoRoute(path: '/settings', builder: (context, state) => const SettingsScreen()),
         GoRoute(path: '/dashboard', builder: (context, state) => const DashboardScreen()),
         GoRoute(

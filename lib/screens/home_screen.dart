@@ -30,16 +30,6 @@ class HomeScreen extends ConsumerWidget {
               onTap: () => context.go('/'),
             ),
             ListTile(
-              leading: const Icon(Icons.add),
-              title: const Text('Add Expense'),
-              onTap: () => context.push('/add'),
-            ),
-            ListTile(
-              leading: const Icon(Icons.attach_money),
-              title: const Text('Add Income'),
-              onTap: () => context.push('/add-income'),
-            ),
-            ListTile(
               leading: const Icon(Icons.settings),
               title: const Text('Settings'),
               onTap: () => context.push('/settings'),
