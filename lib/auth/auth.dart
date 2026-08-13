@@ -5,10 +5,12 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 enum AuthStatus { unknown, authenticated, unauthenticated }
 
+// Auth state including optional username
 class AuthState {
   final AuthStatus status;
   final String? token;
-  const AuthState(this.status, [this.token]);
+  final String? username;
+  const AuthState(this.status, [this.token, this.username]);
 }
 
 class AuthNotifier extends StateNotifier<AuthState> {
@@ -20,10 +22,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<void> _init() async {
-    // Load auth token from secure storage
-    final saved = await _storage.read(key: 'auth_token');
-    if (saved != null && saved.isNotEmpty) {
-      state = AuthState(AuthStatus.authenticated, saved);
+    // Load auth token and username from secure storage
+    final savedToken = await _storage.read(key: 'auth_token');
+    final savedUsername = await _storage.read(key: 'username');
+    if (savedToken != null && savedToken.isNotEmpty && savedUsername != null && savedUsername.isNotEmpty) {
+      state = AuthState(AuthStatus.authenticated, savedToken, savedUsername);
     } else {
       state = const AuthState(AuthStatus.unauthenticated);
     }
@@ -40,10 +43,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       'password': password,
       'mobile': mobile,
     });
-    // Simulate token generation
-    final token = 'demo-token-${DateTime.now().millisecondsSinceEpoch}';
-    await _storage.write(key: 'auth_token', value: token);
-    state = AuthState(AuthStatus.authenticated, token);
+    // No token generated; user will log in via login screen.
   }
 
   // Login by checking credentials against Hive storage.
@@ -56,8 +56,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
       throw Exception('Invalid username or password');
     }
     final token = 'demo-token-${DateTime.now().millisecondsSinceEpoch}';
+    // Store token and username securely
     await _storage.write(key: 'auth_token', value: token);
-    state = AuthState(AuthStatus.authenticated, token);
+    await _storage.write(key: 'username', value: username);
+    state = AuthState(AuthStatus.authenticated, token, username);
   }
 
   Future<void> logout() async {

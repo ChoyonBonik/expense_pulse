@@ -51,6 +51,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Registration successful')),
         );
+        // Use replace to avoid stacking login on top
+        Future.microtask(() => context.replace('/login'));
+        
       }
     } catch (e) {
       if (mounted) {

@@ -1,40 +1,30 @@
-// lib/screens/add_expense_screen.dart
+// lib/screens/add_income_screen.dart
 import 'package:drift/drift.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
-import '../auth/auth.dart';
+import 'package:go_router/go_router.dart';
 import '../database/database.dart';
 import '../providers.dart';
-import 'package:go_router/go_router.dart';
+import '../auth/auth.dart';
 
-class AddExpenseScreen extends ConsumerStatefulWidget {
-  const AddExpenseScreen({super.key});
+class AddIncomeScreen extends ConsumerStatefulWidget {
+  const AddIncomeScreen({Key? key}) : super(key: key);
 
   @override
-  ConsumerState<AddExpenseScreen> createState() => _AddExpenseScreenState();
+  ConsumerState<AddIncomeScreen> createState() => _AddIncomeScreenState();
 }
 
-class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
+class _AddIncomeScreenState extends ConsumerState<AddIncomeScreen> {
   final _formKey = GlobalKey<FormState>();
   final _amountController = TextEditingController();
+  final _sourceController = TextEditingController();
   final _noteController = TextEditingController();
-  String _selectedCategory = 'Misc';
   DateTime _selectedDate = DateTime.now();
-
-  final List<String> _categories = [
-    'Food',
-    'Transport',
-    'Shopping',
-    'Bills',
-    'Entertainment',
-    'Health',
-    'Misc',
-  ];
 
   @override
   void dispose() {
     _amountController.dispose();
+    _sourceController.dispose();
     _noteController.dispose();
     super.dispose();
   }
@@ -52,35 +42,30 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
   }
 
   void _submit() async {
-    if (_formKey.currentState?.validate() ?? false) {
-      final amount = double.parse(_amountController.text);
-      final auth = ref.read(authProvider);
-      final username = auth.username;
-      if (username == null) {
-        // Should not happen, but handle gracefully
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('User not logged in.')),
-        );
-        return;
-      }
-      final expenseCompanion = ExpensesCompanion(
-        amount: Value(amount),
-        category: Value(_selectedCategory),
-        date: Value(_selectedDate),
-        note: Value(_noteController.text.isEmpty ? null : _noteController.text),
-        user: Value(username),
-      );
-      await ref.read(appDatabaseProvider).insertExpense(expenseCompanion);
-      context.go('/');
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+    final amount = double.parse(_amountController.text);
+    final source = _sourceController.text.trim();
+    final auth = ref.read(authProvider);
+    final username = auth.username;
+    if (username == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('User not logged in.')));
+      return;
     }
+    final incomeCompanion = IncomesCompanion(
+      amount: Value(amount),
+      source: Value(source),
+      date: Value(_selectedDate),
+      note: Value(_noteController.text.isEmpty ? null : _noteController.text),
+      user: Value(username),
+    );
+    await ref.read(appDatabaseProvider).insertIncome(incomeCompanion);
+    context.go('/');
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Add Expense'),
-      ),
+      appBar: AppBar(title: const Text('Add Income')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -101,21 +86,18 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
                 },
               ),
               const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                value: _selectedCategory,
-                items: _categories
-                    .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                    .toList(),
+              TextFormField(
+                controller: _sourceController,
                 decoration: const InputDecoration(
-                  labelText: 'Category',
-                  prefixIcon: Icon(Icons.category),
+                  labelText: 'Source',
+                  prefixIcon: Icon(Icons.account_balance),
                 ),
-                onChanged: (val) => setState(() => _selectedCategory = val ?? 'Misc'),
+                validator: (value) => (value == null || value.isEmpty) ? 'Enter source' : null,
               ),
               const SizedBox(height: 16),
               ListTile(
                 leading: const Icon(Icons.calendar_today),
-                title: Text('Date: ${DateFormat.yMMMd().format(_selectedDate)}'),
+                title: Text('Date: ${_selectedDate.toLocal().toString().split(' ')[0]}'),
                 trailing: const Icon(Icons.edit),
                 onTap: _pickDate,
               ),
@@ -132,7 +114,7 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
               ElevatedButton.icon(
                 onPressed: _submit,
                 icon: const Icon(Icons.save),
-                label: const Text('Save Expense'),
+                label: const Text('Save Income'),
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),

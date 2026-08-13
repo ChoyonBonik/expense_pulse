@@ -12,7 +12,7 @@ class DashboardScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final expensesAsync = ref.watch(expensesStreamProvider);
+    final expensesAsync = ref.watch(userExpensesStreamProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Dashboard')),
