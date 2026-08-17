@@ -11,6 +11,12 @@ final themeProvider = StateProvider<ThemeMode>((ref) => ThemeMode.system);
 final appDatabaseProvider = Provider<AppDatabase>((ref) => AppDatabase());
 
 // Stream of expenses from the database
+final userIncomesStreamProvider = StreamProvider<List<Income>>((ref) {
+  final auth = ref.watch(authProvider);
+  if (auth.username == null) return const Stream.empty();
+  return ref.watch(appDatabaseProvider).watchIncomesByUser(auth.username!);
+});
+
 final userExpensesStreamProvider = StreamProvider<List<Expense>>((ref) {
   final auth = ref.watch(authProvider);
   if (auth.username == null) return const Stream.empty();
@@ -18,8 +24,10 @@ final userExpensesStreamProvider = StreamProvider<List<Expense>>((ref) {
 });
 
 // Stream of incomes for the logged-in user
-final userIncomesStreamProvider = StreamProvider<List<Income>>((ref) {
-  final auth = ref.watch(authProvider);
-  if (auth.username == null) return const Stream.empty();
-  return ref.watch(appDatabaseProvider).watchIncomesByUser(auth.username!);
+// Stream of categories (both expense and income)
+final selectedCategoryProvider = StateProvider<String?>((ref) => null);
+
+final categoriesStreamProvider = StreamProvider<List<Category>>((ref) {
+  return ref.watch(appDatabaseProvider).watchAllCategories();
 });
+

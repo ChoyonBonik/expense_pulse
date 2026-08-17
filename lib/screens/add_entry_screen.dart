@@ -1,12 +1,14 @@
-// lib/screens/add_entry_screen.dart
-import 'package:drift/drift.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
-import '../auth/auth.dart';
-import '../database/database.dart';
+import '../auth/auth.dart'; // added auth import
 import '../providers.dart';
+import 'package:drift/drift.dart' as drift; // prefixed drift import
+import '../database/database.dart';
+
+
+
 
 /// A combined screen for adding either an expense or an income.
 ///
@@ -14,7 +16,9 @@ import '../providers.dart';
 /// the existing form logic from the separate screens. This keeps the code DRY
 /// while giving the user a convenient single entry point.
 class AddEntryScreen extends ConsumerStatefulWidget {
-  const AddEntryScreen({super.key});
+  final String? initialCategory;
+  final int? initialType; // 1 for expense, 2 for income
+  const AddEntryScreen({super.key, this.initialCategory, this.initialType});
 
   @override
   ConsumerState<AddEntryScreen> createState() => _AddEntryScreenState();
@@ -23,8 +27,18 @@ class AddEntryScreen extends ConsumerStatefulWidget {
 class _AddEntryScreenState extends ConsumerState<AddEntryScreen> {
   @override
   Widget build(BuildContext context) {
+    // Determine initial tab index: 0 for expense, 1 for income
+    int initialIndex = 0;
+    if (widget.initialType == 2) {
+      initialIndex = 1;
+    }
+    // Save selected category into provider for forms to read
+    if (widget.initialCategory != null) {
+      ref.read(selectedCategoryProvider.notifier).state = widget.initialCategory;
+    }
     return DefaultTabController(
       length: 2,
+      initialIndex: initialIndex,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Add Entry'),
@@ -55,21 +69,85 @@ class _ExpenseForm extends ConsumerStatefulWidget {
 }
 
 class _ExpenseFormState extends ConsumerState<_ExpenseForm> {
+  // State variables for expense form
   final _formKey = GlobalKey<FormState>();
   final _amountController = TextEditingController();
   final _noteController = TextEditingController();
+  // Selected category and date
   String _selectedCategory = 'Misc';
   DateTime _selectedDate = DateTime.now();
 
-  final List<String> _categories = [
-    'Food',
-    'Transport',
-    'Shopping',
-    'Bills',
-    'Entertainment',
-    'Health',
-    'Misc',
-  ];
+  // Dynamic list of categories fetched from the database
+  List<String> _categories = [];
+
+  @override
+  void initState() {
+    super.initState();
+    // Listen to categories stream and update local list & selected category
+    ref.listen<AsyncValue<List<Category>>>(categoriesStreamProvider, (prev, next) {
+      next.whenData((categories) {
+        setState(() {
+          _categories = categories.map((c) => c.name).toList();
+          // Preferred category from provider if set
+          final pref = ref.read(selectedCategoryProvider);
+          if (pref != null && _categories.contains(pref)) {
+            _selectedCategory = pref;
+          } else if (_categories.isNotEmpty) {
+            _selectedCategory = _categories.first;
+          } else {
+            _selectedCategory = 'Misc';
+          }
+        });
+      });
+    });
+  }
+
+  // Helper to add a new category
+  void _showAddCategoryDialog() {
+    final nameController = TextEditingController();
+    int type = 0; // 0 = both, 1 = expense, 2 = income
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Add Category'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: nameController,
+              decoration: const InputDecoration(labelText: 'Name'),
+            ),
+            const SizedBox(height: 8),
+            DropdownButtonFormField<int>(
+              value: type,
+              items: const [
+                DropdownMenuItem(value: 0, child: Text('Both')),
+                DropdownMenuItem(value: 1, child: Text('Expense')),
+                DropdownMenuItem(value: 2, child: Text('Income')),
+              ],
+              onChanged: (v) => type = v ?? 0,
+              decoration: const InputDecoration(labelText: 'Type'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () async {
+              final name = nameController.text.trim();
+              if (name.isNotEmpty) {
+                await ref.read(appDatabaseProvider).insertCategory(
+                  CategoriesCompanion(name: drift.Value(name), type: drift.Value(type)),
+                );
+                Navigator.of(ctx).pop();
+              }
+            },
+            child: const Text('Add'),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   void dispose() {
@@ -100,11 +178,11 @@ class _ExpenseFormState extends ConsumerState<_ExpenseForm> {
       return;
     }
     final expense = ExpensesCompanion(
-      amount: Value(amount),
-      category: Value(_selectedCategory),
-      date: Value(_selectedDate),
-      note: Value(_noteController.text.isEmpty ? null : _noteController.text),
-      user: Value(username),
+      amount: drift.Value(amount),
+      category: drift.Value(_selectedCategory),
+      date: drift.Value(_selectedDate),
+      note: drift.Value(_noteController.text.isEmpty ? null : _noteController.text),
+      user: drift.Value(username),
     );
     await ref.read(appDatabaseProvider).insertExpense(expense);
     if (mounted) context.pop(); // go back to previous screen
@@ -213,12 +291,12 @@ class _IncomeFormState extends ConsumerState<_IncomeForm> {
       return;
     }
     final income = IncomesCompanion(
-      amount: Value(amount),
-      source: Value(source),
-      date: Value(_selectedDate),
-      note: Value(_noteController.text.isEmpty ? null : _noteController.text),
-      user: Value(username),
-    );
+        amount: drift.Value(amount),
+        source: drift.Value(source),
+        date: drift.Value(_selectedDate),
+        note: drift.Value(_noteController.text.isEmpty ? null : _noteController.text),
+        user: drift.Value(username),
+      );
     await ref.read(appDatabaseProvider).insertIncome(income);
     if (mounted) context.pop();
   }
