@@ -16,7 +16,7 @@ class _SplashScreenState extends State<SplashScreen> {
   void initState() {
     super.initState();
     // Show splash for 2 seconds then navigate; routing logic will redirect if unauthenticated
-    Timer(const Duration(seconds: 10), () {
+    Timer(const Duration(seconds: 2), () {
         if (!mounted) return;
         context.go('/');
       });
