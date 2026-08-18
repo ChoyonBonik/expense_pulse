@@ -13,62 +13,92 @@ class CategoryScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final categoriesAsync = ref.watch(categoriesStreamProvider);
-    return Scaffold(
-      appBar: AppBar(title: const Text('Categories')),
-      body: categoriesAsync.when(
-        data: (categories) => ListView.builder(
-          itemCount: categories.length,
-          itemBuilder: (context, index) {
-            final cat = categories[index];
-            return ListTile(
-                title: Text(cat.name),
-                subtitle: Text(_typeLabel(cat.type)),
-                onTap: () {
-                  // Determine navigation based on category type
-                  if (cat.type == 1) {
-                    // Expense only
-                    context.go('/add_entry?category=${Uri.encodeComponent(cat.name)}&type=1');
-                  } else if (cat.type == 2) {
-                    // Income only
-                    context.go('/add_entry?category=${Uri.encodeComponent(cat.name)}&type=2');
-                  } else {
-                    // Both - ask user which
-                    showDialog(
-                      context: context,
-                      builder: (c) => AlertDialog(
-                        title: const Text('Select Entry Type'),
-                        content: const Text('Do you want to add an expense or income?'),
-                        actions: [
-                          TextButton(
-                            onPressed: () {
-                              Navigator.of(c).pop();
-                              context.go('/add_entry?category=${Uri.encodeComponent(cat.name)}&type=1');
-                            },
-                            child: const Text('Expense'),
-                          ),
-                          TextButton(
-                            onPressed: () {
-                              Navigator.of(c).pop();
-                              context.go('/add_entry?category=${Uri.encodeComponent(cat.name)}&type=2');
-                            },
-                            child: const Text('Income'),
-                          ),
-                        ],
-                      ),
-                    );
-                  }
-                },
-              );
-          },
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Categories'),
+          bottom: const TabBar(
+            tabs: [
+              Tab(text: 'Expense'),
+              Tab(text: 'Income'),
+            ],
+          ),
         ),
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
+        body: categoriesAsync.when(
+          data: (categories) {
+            // Default hard‑coded categories (shown initially)
+            final defaultCategories = [
+              Category(id: 0, name: 'Shopping', type: 0),
+              Category(id: 0, name: 'Food', type: 0),
+              Category(id: 0, name: 'Phone', type: 0),
+              Category(id: 0, name: 'Entertainment', type: 0),
+              Category(id: 0, name: 'Education', type: 0),
+              Category(id: 0, name: 'Beauty', type: 0),
+              Category(id: 0, name: 'Sports', type: 0),
+              Category(id: 0, name: 'Social', type: 0),
+              Category(id: 0, name: 'Car', type: 0),
+              Category(id: 0, name: 'Travel', type: 0),
+              Category(id: 0, name: 'Health', type: 0),
+              Category(id: 0, name: 'Home', type: 0),
+            ];
+            final all = [...categories, ...defaultCategories];
+            return TabBarView(
+              children: [
+                _buildCategoryGrid(context, all, 1), // Expense tab
+                _buildCategoryGrid(context, all, 2), // Income tab
+              ],
+            );
+          },
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (e, _) => Center(child: Text('Error: $e')),
+        ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddDialog(context, ref),
-        child: const Icon(Icons.add),
-        tooltip: 'Add Category',
+    );
+  }
+
+  Widget _buildCategoryGrid(BuildContext context, List<Category> allCategories, int filterType) {
+    final filtered = filterType == 0
+        ? allCategories
+        : allCategories.where((c) => c.type == filterType || c.type == 0).toList();
+
+    return GridView.builder(
+      padding: const EdgeInsets.all(12),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+        childAspectRatio: 0.9,
       ),
+      itemCount: filtered.length,
+      itemBuilder: (context, index) {
+        final cat = filtered[index];
+        return GestureDetector(
+          onTap: () {
+              // Navigate based on the selected tab (filterType)
+              if (filterType == 1) {
+                // Expense tab
+                context.go('/add_entry?category=${Uri.encodeComponent(cat.name)}&type=1');
+              } else if (filterType == 2) {
+                // Income tab
+                context.go('/add_entry?category=${Uri.encodeComponent(cat.name)}&type=2');
+              }
+            },
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(_iconForCategory(cat.name), size: 36, color: Colors.white),
+              const SizedBox(height: 8),
+              Text(cat.name,
+                  style: const TextStyle(fontSize: 14),
+                  textAlign: TextAlign.center),
+              const SizedBox(height: 4),
+              Text(_typeLabel(cat.type),
+                  style: const TextStyle(fontSize: 12, color: Colors.grey)),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -82,6 +112,37 @@ class CategoryScreen extends ConsumerWidget {
         return 'Income';
       default:
         return 'Unknown';
+    }
+  }
+
+  IconData _iconForCategory(String name) {
+    switch (name.toLowerCase()) {
+      case 'shopping':
+        return Icons.shopping_cart;
+      case 'food':
+        return Icons.fastfood;
+      case 'phone':
+        return Icons.phone_android;
+      case 'entertainment':
+        return Icons.movie;
+      case 'education':
+        return Icons.school;
+      case 'beauty':
+        return Icons.brush;
+      case 'sports':
+        return Icons.sports_soccer;
+      case 'social':
+        return Icons.people;
+      case 'car':
+        return Icons.directions_car;
+      case 'travel':
+        return Icons.flight;
+      case 'health':
+        return Icons.favorite;
+      case 'home':
+        return Icons.home;
+      default:
+        return Icons.category;
     }
   }
 }
