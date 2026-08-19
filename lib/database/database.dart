@@ -45,27 +45,32 @@ class AppDatabase extends _$AppDatabase {
   @override
   int get schemaVersion => 8;
 
-  @override
-  MigrationStrategy get migration => MigrationStrategy(
-    onCreate: (Migrator m) async {
-      await m.createAll();
-    },
-    onUpgrade: (Migrator m, int from, int to) async {
-      if (from == 1) {
-        await m.addColumn(expenses, expenses.user);
-      }
-      if (from < 3) {
-        await m.createTable(incomes);
-      }
-      if (from < 6) {
-        await m.createTable(categories);
-      }
-      if (from == 7) {
-        // Ensure the icon column exists for databases at version 7
-        await m.addColumn(categories, categories.icon);
-      }
-    },
-  );
+  // Export DAO methods
+  Future<List<Expense>> getAllExpenses() => select(expenses).get();
+  Future<List<Income>> getAllIncomes() => select(incomes).get();
+  Future<List<Category>> getAllCategories() => select(categories).get();
+
+@override
+MigrationStrategy get migration => MigrationStrategy(
+  onCreate: (Migrator m) async {
+    await m.createAll();
+  },
+  onUpgrade: (Migrator m, int from, int to) async {
+    if (from == 1) {
+      await m.addColumn(expenses, expenses.user);
+    }
+    if (from < 3) {
+      await m.createTable(incomes);
+    }
+    if (from < 6) {
+      await m.createTable(categories);
+    }
+    if (from == 7) {
+      // Ensure the icon column exists for databases at version 7
+      await m.addColumn(categories, categories.icon);
+    }
+  },
+);
 
 // Duplicate migration removed
 

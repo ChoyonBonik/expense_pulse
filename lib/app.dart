@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 // Removed hide import; GoRouterRefreshStream is now accessible via the standard import
 import 'package:go_router/go_router.dart';
 import 'screens/category_settings_screen.dart';
+import 'screens/export_screen.dart';
 import 'providers.dart';
 import 'auth/auth.dart';
 import 'screens/home_screen.dart';
@@ -58,6 +59,7 @@ class ExpensePulseApp extends ConsumerWidget {
         
         GoRoute(path: '/settings', builder: (context, state) => const SettingsScreen()),
         GoRoute(path: '/categories/settings', builder: (context, state) => const CategorySettingsScreen()),
+        GoRoute(path: '/export', builder: (context, state) => const ExportScreen()),
         GoRoute(path: '/dashboard', builder: (context, state) => const DashboardScreen()),
         GoRoute(
           path: '/edit/:id',
