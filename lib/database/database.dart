@@ -31,6 +31,7 @@ class Categories extends Table {
   TextColumn get name => text()();
   // type: 0 = both, 1 = expense only, 2 = income only
   IntColumn get type => integer().withDefault(const Constant(0))();
+  IntColumn get icon => integer().withDefault(const Constant(0))();
 }
 
 @DriftDatabase(tables: [Expenses, Incomes, Categories])
@@ -42,7 +43,7 @@ class AppDatabase extends _$AppDatabase {
   Future<int> insertIncome(IncomesCompanion income) => into(incomes).insert(income);
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -58,6 +59,10 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 6) {
         await m.createTable(categories);
+      }
+      if (from == 7) {
+        // Ensure the icon column exists for databases at version 7
+        await m.addColumn(categories, categories.icon);
       }
     },
   );
