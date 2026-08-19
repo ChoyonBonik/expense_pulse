@@ -40,8 +40,8 @@ class CategoryScreen extends ConsumerWidget {
           actions: [
             IconButton(
               icon: const Icon(Icons.settings),
-              tooltip: 'Add Category',
-              onPressed: () => _showAddDialog(context, ref),
+              tooltip: 'Category Settings',
+              onPressed: () => context.push('/categories/settings'),
             ),
           ],
           bottom: const TabBar(
