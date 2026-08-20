@@ -31,3 +31,8 @@ final categoriesStreamProvider = StreamProvider<List<Category>>((ref) {
   return ref.watch(appDatabaseProvider).watchAllCategories();
 });
 
+// Stream of budgets for the current month
+final monthBudgetsProvider = StreamProvider.autoDispose<List<Budget>>((ref) {
+  final now = DateTime.now();
+  return ref.watch(appDatabaseProvider).watchBudgetsByMonth(now.year, now.month);
+});

@@ -51,12 +51,12 @@ class DashboardScreen extends ConsumerWidget {
 }
 
 /// Widget that renders the expense view (previous implementation).
-class _ExpenseTab extends StatelessWidget {
+class _ExpenseTab extends ConsumerWidget {
   final List<Expense> expenses;
   const _ExpenseTab({required this.expenses, super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final now = DateTime.now();
     final monthExpenses = expenses.where((e) => e.date.year == now.year && e.date.month == now.month);
     final total = monthExpenses.fold<double>(0, (sum, e) => sum + e.amount);
@@ -99,6 +99,29 @@ class _ExpenseTab extends StatelessWidget {
               style: Theme.of(context).textTheme.titleLarge,
               textAlign: TextAlign.center,
             ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Builder(builder: (context) {
+              final expenseTotal = total;
+              final budgetsAsync = ref.watch(monthBudgetsProvider);
+              return budgetsAsync.when(
+                loading: () => const CircularProgressIndicator(),
+                error: (e, _) => Text('Error loading budgets: $e'),
+                data: (budgets) {
+                  final totalBudget = budgets.fold<double>(0, (sum, b) => sum + b.amount);
+                  final remaining = totalBudget - expenseTotal;
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Budget this month: ${NumberFormat.currency(symbol: "৳").format(totalBudget)}', style: Theme.of(context).textTheme.titleMedium),
+                      const SizedBox(height: 4),
+                      Text('Remaining: ${NumberFormat.currency(symbol: "৳").format(remaining)}', style: Theme.of(context).textTheme.titleMedium?.copyWith(color: remaining >= 0 ? Colors.green : Colors.red)),
+                    ],
+                  );
+                },
+              );
+            }),
           ),
           if (sections.isNotEmpty)
             SizedBox(height: 250, child: PieChart(PieChartData(sections: sections, sectionsSpace: 2, centerSpaceRadius: 40, borderData: FlBorderData(show: false))))

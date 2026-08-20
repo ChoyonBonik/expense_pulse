@@ -2,13 +2,14 @@
 import 'package:expense_pulse/router/go_router_refresh_stream.dart';
 import 'package:expense_pulse/screens/add_entry_screen.dart';
 import 'package:expense_pulse/screens/category_screen.dart';
+import 'package:expense_pulse/screens/category_settings_screen.dart';
 import 'package:expense_pulse/screens/splash_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 // Removed hide import; GoRouterRefreshStream is now accessible via the standard import
 import 'package:go_router/go_router.dart';
-import 'screens/category_settings_screen.dart';
+import 'screens/budget_screen.dart';
 import 'screens/export_screen.dart';
 import 'providers.dart';
 import 'auth/auth.dart';
@@ -60,6 +61,7 @@ class ExpensePulseApp extends ConsumerWidget {
         GoRoute(path: '/settings', builder: (context, state) => const SettingsScreen()),
         GoRoute(path: '/categories/settings', builder: (context, state) => const CategorySettingsScreen()),
         GoRoute(path: '/export', builder: (context, state) => const ExportScreen()),
+        GoRoute(path: '/budget', builder: (context, state) => const BudgetScreen()),
         GoRoute(path: '/dashboard', builder: (context, state) => const DashboardScreen()),
         GoRoute(
           path: '/edit/:id',

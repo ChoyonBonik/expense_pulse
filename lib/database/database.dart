@@ -34,7 +34,20 @@ class Categories extends Table {
   IntColumn get icon => integer().withDefault(const Constant(0))();
 }
 
-@DriftDatabase(tables: [Expenses, Incomes, Categories])
+class Budgets extends Table {
+  // Primary key
+  IntColumn get id => integer().autoIncrement()();
+  // Year and month of the budget (e.g., 2026, 8)
+  IntColumn get year => integer()();
+  IntColumn get month => integer()();
+  // Optional foreign key to a category; null means overall budget
+  IntColumn get categoryId => integer().nullable().customConstraint('REFERENCES categories(id)')();
+  // Budget amount
+  RealColumn get amount => real()();
+}
+
+
+@DriftDatabase(tables: [Expenses, Incomes, Categories, Budgets])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
@@ -43,34 +56,56 @@ class AppDatabase extends _$AppDatabase {
   Future<int> insertIncome(IncomesCompanion income) => into(incomes).insert(income);
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   // Export DAO methods
   Future<List<Expense>> getAllExpenses() => select(expenses).get();
   Future<List<Income>> getAllIncomes() => select(incomes).get();
   Future<List<Category>> getAllCategories() => select(categories).get();
+  Stream<List<Category>> watchAllCategories() => select(categories).watch();
+  Future<List<Budget>> getAllBudgets() => select(budgets).get();
 
-@override
-MigrationStrategy get migration => MigrationStrategy(
-  onCreate: (Migrator m) async {
-    await m.createAll();
-  },
-  onUpgrade: (Migrator m, int from, int to) async {
-    if (from == 1) {
-      await m.addColumn(expenses, expenses.user);
-    }
-    if (from < 3) {
-      await m.createTable(incomes);
-    }
-    if (from < 6) {
-      await m.createTable(categories);
-    }
-    if (from == 7) {
-      // Ensure the icon column exists for databases at version 7
-      await m.addColumn(categories, categories.icon);
-    }
-  },
-);
+  Stream<List<Budget>> watchAllBudgets() => select(budgets).watch();
+  Future<int> insertBudget(BudgetsCompanion budget) =>
+      into(budgets).insert(budget);
+  Future<int> upsertBudget(BudgetsCompanion budget) =>
+      into(budgets).insertOnConflictUpdate(budget);
+  Future<int> deleteBudget(int id) =>
+      (delete(budgets)..where((t) => t.id.equals(id))).go();
+  Future<Budget?> getOverallBudget(int year, int month) => (select(budgets)
+          ..where((t) => t.year.equals(year) & t.month.equals(month) & t.categoryId.isNull()))
+      .getSingleOrNull();
+  Future<Budget?> getCategoryBudget(int year, int month, int catId) => (select(budgets)
+          ..where((t) => t.year.equals(year) & t.month.equals(month) & t.categoryId.equals(catId)))
+      .getSingleOrNull();
+  Stream<List<Budget>> watchBudgetsByMonth(int year, int month) => (select(budgets)
+          ..where((t) => t.year.equals(year) & t.month.equals(month)))
+      .watch();
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+    onCreate: (Migrator m) async {
+      await m.createAll();
+    },
+    onUpgrade: (Migrator m, int from, int to) async {
+      if (from == 1) {
+        await m.addColumn(expenses, expenses.user);
+      }
+      if (from < 3) {
+        await m.createTable(incomes);
+      }
+      if (from < 6) {
+        await m.createTable(categories);
+      }
+      if (from == 7) {
+        await m.addColumn(categories, categories.icon);
+      }
+      if (from < 9) {
+        await m.createTable(budgets);
+      }
+    },
+  );
+
 
 // Duplicate migration removed
 
@@ -79,7 +114,7 @@ MigrationStrategy get migration => MigrationStrategy(
   Future<int> insertCategory(CategoriesCompanion category) => into(categories).insert(category);
   Future<int> deleteCategory(int id) => (delete(categories)..where((t) => t.id.equals(id))).go();
   Future<bool> updateCategory(CategoriesCompanion category) => update(categories).replace(category);
-  Stream<List<Category>> watchAllCategories() => select(categories).watch();
+  // Stream<List<Category>> watchAllCategories() => select(categories).watch();
 
   // Expense/Income DAO methods
   Stream<List<Expense>> watchExpensesByUser(String username) => (select(expenses)..where((t) => t.user.equals(username))).watch();

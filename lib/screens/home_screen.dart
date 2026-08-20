@@ -46,6 +46,11 @@ class HomeScreen extends ConsumerWidget {
               onTap: () => context.push('/export'),
             ),
             ListTile(
+              leading: const Icon(Icons.data_array),
+              title: const Text('Set Budget'),
+              onTap: () => context.push('/budget'),
+            ),
+            ListTile(
               leading: const Icon(Icons.dashboard),
               title: const Text('Dashboard'),
               onTap: () => context.push('/dashboard'),

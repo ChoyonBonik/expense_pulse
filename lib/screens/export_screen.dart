@@ -18,6 +18,10 @@ class ExportScreen extends ConsumerWidget {
     final expenses = await ref.read(appDatabaseProvider).getAllExpenses();
     final incomes = await ref.read(appDatabaseProvider).getAllIncomes();
     final categories = await ref.read(appDatabaseProvider).getAllCategories();
+    final budgets = await ref.read(appDatabaseProvider).getAllBudgets();
+    // Build a quick lookup for category names by id
+    final Map<int, String> categoryIdToName = { for (var c in categories) c.id: c.name };
+
 
     final pdf = pw.Document();
     pdf.addPage(
@@ -64,6 +68,23 @@ class ExportScreen extends ConsumerWidget {
                     .map((c) => [c.id, c.name, c.type, c.icon])
                     .toList(),
               ),
+              pw.SizedBox(height: 20),
+               // Budgets section
+               pw.Text('Budgets', style: pw.TextStyle(fontSize: 24)),
+               pw.Table.fromTextArray(
+                 headers: ['ID', 'Year', 'Month', 'Category', 'Amount'],
+                 data: budgets
+                     .map(
+                       (b) => [
+                         b.id,
+                         b.year,
+                         b.month,
+                         b.categoryId != null ? (categoryIdToName[b.categoryId!] ?? 'Unknown') : 'Overall',
+                         b.amount,
+                       ],
+                     )
+                     .toList(),
+               ),
             ],
           );
         },
