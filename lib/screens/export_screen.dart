@@ -1,12 +1,14 @@
 // lib/screens/export_screen.dart
 import 'dart:io';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'package:pdf/widgets.dart' as pw;
 import 'package:excel/excel.dart' as ex;
-import '../database/database.dart';
+import 'package:share_plus/share_plus.dart';
+
 import '../providers.dart';
 
 class ExportScreen extends ConsumerWidget {
@@ -18,32 +20,65 @@ class ExportScreen extends ConsumerWidget {
     final categories = await ref.read(appDatabaseProvider).getAllCategories();
 
     final pdf = pw.Document();
-    pdf.addPage(pw.Page(build: (pw.Context c) {
-      return pw.Column(children: [
-        pw.Text('Expenses', style: pw.TextStyle(fontSize: 24)),
-        pw.Table.fromTextArray(
-          headers: ['ID', 'Amount', 'Category', 'Date', 'Note'],
-          data: expenses.map((e) => [e.id, e.amount, e.category, e.date.toString(), e.note ?? '']).toList(),
-        ),
-        pw.SizedBox(height: 20),
-        pw.Text('Incomes', style: pw.TextStyle(fontSize: 24)),
-        pw.Table.fromTextArray(
-          headers: ['ID', 'Amount', 'Source', 'Date', 'Note'],
-          data: incomes.map((i) => [i.id, i.amount, i.source, i.date.toString(), i.note ?? '']).toList(),
-        ),
-        pw.SizedBox(height: 20),
-        pw.Text('Categories', style: pw.TextStyle(fontSize: 24)),
-        pw.Table.fromTextArray(
-          headers: ['ID', 'Name', 'Type', 'Icon'],
-          data: categories.map((c) => [c.id, c.name, c.type, c.icon]).toList(),
-        ),
-      ]);
-    }));
+    pdf.addPage(
+      pw.Page(
+        build: (pw.Context c) {
+          return pw.Column(
+            children: [
+              pw.Text('Expenses', style: pw.TextStyle(fontSize: 24)),
+              pw.Table.fromTextArray(
+                headers: ['ID', 'Amount', 'Category', 'Date', 'Note'],
+                data: expenses
+                    .map(
+                      (e) => [
+                        e.id,
+                        e.amount,
+                        e.category,
+                        e.date.toString(),
+                        e.note ?? '',
+                      ],
+                    )
+                    .toList(),
+              ),
+              pw.SizedBox(height: 20),
+              pw.Text('Incomes', style: pw.TextStyle(fontSize: 24)),
+              pw.Table.fromTextArray(
+                headers: ['ID', 'Amount', 'Source', 'Date', 'Note'],
+                data: incomes
+                    .map(
+                      (i) => [
+                        i.id,
+                        i.amount,
+                        i.source,
+                        i.date.toString(),
+                        i.note ?? '',
+                      ],
+                    )
+                    .toList(),
+              ),
+              pw.SizedBox(height: 20),
+              pw.Text('Categories', style: pw.TextStyle(fontSize: 24)),
+              pw.Table.fromTextArray(
+                headers: ['ID', 'Name', 'Type', 'Icon'],
+                data: categories
+                    .map((c) => [c.id, c.name, c.type, c.icon])
+                    .toList(),
+              ),
+            ],
+          );
+        },
+      ),
+    );
 
-    final dir = await getApplicationDocumentsDirectory();
-    final file = File('${dir.path}/expense_data_${DateTime.now().millisecondsSinceEpoch}.pdf');
+    // Save to temporary directory
+    final dir = await getTemporaryDirectory();
+    final file = File(
+      '${dir.path}/expense_data_${DateTime.now().millisecondsSinceEpoch}.pdf',
+    );
     await file.writeAsBytes(await pdf.save());
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('PDF saved to ${file.path}')));
+
+    // Share the file
+    await Share.shareXFiles([XFile(file.path)], text: 'Here is your PDF');
   }
 
   Future<void> _exportExcel(BuildContext context, WidgetRef ref) async {
@@ -55,22 +90,42 @@ class ExportScreen extends ConsumerWidget {
     var expSheet = excel['Expenses'];
     expSheet.appendRow(['ID', 'Amount', 'Category', 'Date', 'Note']);
     for (var e in expenses) {
-      expSheet.appendRow([e.id, e.amount, e.category, e.date.toString(), e.note ?? '']);
+      expSheet.appendRow([
+        e.id,
+        e.amount,
+        e.category,
+        e.date.toString(),
+        e.note ?? '',
+      ]);
     }
     final incSheet = excel['Incomes'];
     incSheet.appendRow(['ID', 'Amount', 'Source', 'Date', 'Note']);
     for (var i in incomes) {
-      incSheet.appendRow([i.id, i.amount, i.source, i.date.toString(), i.note ?? '']);
+      incSheet.appendRow([
+        i.id,
+        i.amount,
+        i.source,
+        i.date.toString(),
+        i.note ?? '',
+      ]);
     }
     final catSheet = excel['Categories'];
     catSheet.appendRow(['ID', 'Name', 'Type', 'Icon']);
     for (var c in categories) {
       catSheet.appendRow([c.id, c.name, c.type, c.icon]);
     }
-    final dir = await getApplicationDocumentsDirectory();
-    final file = File('${dir.path}/expense_data_${DateTime.now().millisecondsSinceEpoch}.xlsx');
+
+    // Save to temporary directory
+    final dir = await getTemporaryDirectory();
+    final file = File(
+      '${dir.path}/expense_data_${DateTime.now().millisecondsSinceEpoch}.xlsx',
+    );
     await file.writeAsBytes(excel.encode()!);
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Excel saved to ${file.path}')));
+
+    // Share the file
+    await Share.shareXFiles([
+      XFile(file.path),
+    ], text: 'Here is your Excel file');
   }
 
   @override
